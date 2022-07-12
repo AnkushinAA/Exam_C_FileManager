@@ -196,8 +196,8 @@ public:
 		temp= str + "\\*.*";//добавляем маску для поиска всех файлов и подкатологов в директории
 		char Path[MAX_PATH]{};
 		strcpy_s(Path, temp.c_str());  //копируем текущий путь и имя папки		 
-		_finddata_t Find; //объект структуры для хранения результатов
-		long Done = _findfirst(Path, &Find);
+		_finddata_t* Find= new _finddata_t; //объект структуры для хранения результатов
+		long Done = _findfirst(Path, Find);
 		//если Done равен -1 файлов нет
 		int MayWeWork = Done;
 		if (MayWeWork == -1)
@@ -207,10 +207,10 @@ public:
 		while (MayWeWork != -1)
 		{
 			if (MayWeWork == -1)break;
-			if (strcmp(Find.name, ".") && strcmp(Find.name, "..")) //исключаем каталоги .  и ..
+			if (strcmp(Find->name, ".") && strcmp(Find->name, "..")) //исключаем каталоги .  и ..
 			{
 				//проверяем файл или папка найдена
-				if (Find.attrib & _A_SUBDIR) //если поле атрибут содержит директорию
+				if (Find->attrib & _A_SUBDIR) //если поле атрибут содержит директорию
 				{
 					//копируем папки
 					//временная строка для хранения пути к подпапке в источнике
@@ -218,7 +218,7 @@ public:
 					//запоминаем путь к подпапке для источника
 					strcpy_s(SubDirSrc, str.c_str());
 					strcat_s(SubDirSrc, "\\");
-					strcat_s(SubDirSrc, Find.name); //добавляем имя подпапки					
+					strcat_s(SubDirSrc, Find->name); //добавляем имя подпапки					
 					CountDir++;
 					Del_D(SubDirSrc); //вызываем рекурсифункцию для удаления подпапки
 				}
@@ -230,13 +230,13 @@ public:
 					//запоминаем путь к подпапке для источника
 					strcpy_s(FileSrc, str.c_str());
 					strcat_s(FileSrc, "\\");
-					strcat_s(FileSrc, Find.name); //добавляем имя подпапки					
+					strcat_s(FileSrc, Find->name); //добавляем имя подпапки					
 					CountFile++;
 					Del_F(FileSrc); //вызываем функцию для копирования файла
 				}
 				
 			}
-			MayWeWork = _findnext(Done, &Find);
+			MayWeWork = _findnext(Done, Find);
 			
 		}
 		_findclose(Done);
@@ -452,6 +452,25 @@ public:
 			_findclose(Done);
 		}
 	}
+	void ChangeDisk()
+	{
+		string choice;
+		cout << "Введите букву диска" << endl;
+		cin >> choice;
+		choice += ":\\";
+		_finddata_t Find; //объект структуры для хранения результатов		
+		int Done = _findfirst(choice.c_str(), &Find);
+		if (Done == -1)
+		{
+			cout << "Такого диска нет" << endl;
+		}
+		else
+		{
+			path = choice;
+		}
+		_findclose(Done);			
+		
+	}
 };
 
 void MENU()
@@ -477,6 +496,7 @@ void MENU()
 				<< "movf  // перемещение файла" << endl
 				<< "movd  // перемещение папки" << endl
 				<< "cd    // переход по папкам" << endl
+				<< "cdd   // переход по дискам" << endl
 				<< "show  // содержимое папки" << endl
 				<< "exit  // выход" << endl;
 		}
@@ -491,6 +511,7 @@ void MENU()
 		if (str == "deld")B.Del_Dir();
 		if (str == "movd")B.Mov_Dir();
 		if (str == "cd")B.Travel();
+		if (str == "cdd")B.ChangeDisk();
 		if (str == "show") B.Show_Dir();
 		if (str == "exit")exit(666);
 	}
